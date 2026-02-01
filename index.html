@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Future Career Predictor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+  color: white;
+  display: flex;
+  justify-content: center;
+}
+.container {
+  max-width: 650px;
+  padding: 20px;
+  text-align: center;
+}
+input, textarea, button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+}
+button {
+  background: #6c5ce7;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+.results { margin-top: 20px; }
+.card {
+  background: #22223b;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.verdict { font-weight: bold; margin-top: 10px; }
+.avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  margin: 10px auto; border: 3px solid #6c5ce7;
+}
+.hidden { display: none; }
+#leaderboard { margin-top: 25px; text-align: left; font-size: 0.9rem; }
+.loading-text { color: #bbb; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>💼 Your Future Career Has Been Decided</h1>
+  <p>Enter your X username and let AI overanalyze your existence.</p>
+
+  <input type="text" id="username" placeholder="X username (no @)">
+  <textarea id="bio" placeholder="Paste bio (optional for smarter roast)"></textarea>
+  <button onclick="predictCareer()">Predict My Future</button>
+
+  <div id="loading" class="hidden">
+    <p class="loading-text" id="loadingText">Scanning digital footprint...</p>
+  </div>
+
+  <div id="results" class="results hidden">
+    <div id="captureArea">
+      <img id="avatar" class="avatar">
+      <div id="careerCards"></div>
+      <div id="finalVerdict" class="verdict"></div>
+    </div>
+    <button onclick="downloadImage()">Download Result Image</button>
+    <button id="shareBtn">Copy Share Text</button>
+  </div>
+
+  <div id="leaderboard">
+    <h3>🔥 Most Predicted Careers</h3>
+    <ul id="leaderboardList"></ul>
+  </div>
+</div>
+
+<audio id="beep" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+<audio id="success" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+<script>
+const loadingMsgs = [
+  "Reading aura...",
+  "Detecting main character energy...",
+  "Counting bad takes...",
+  "Measuring podcast potential..."
+];
+
+const careers = [
+  { title:"🎙 Future Podcast Host", desc:"You have opinions. None researched.", tags:["talk","podcast"] },
+  { title:"📈 Crypto Analyst (Bull Only)", desc:"Gone during crashes.", tags:["crypto","btc"] },
+  { title:"🧵 Thread Writer", desc:"‘Nobody is talking about this 👇’", tags:["thread"] },
+  { title:"🤖 AI Thought Leader", desc:"Says ‘AI will change everything’ daily.", tags:["ai"] },
+  { title:"🧘 Productivity Influencer", desc:"Notion template incoming.", tags:["productivity"] },
+  { title:"🧑‍💻 Indie Hacker (No Revenue)", desc:"Building forever.", tags:["build","startup"] },
+  { title:"💬 Reply Guy", desc:"Lives in mentions.", tags:["reply"] }
+];
+
+function weighted(bio){
+  bio=bio.toLowerCase(); let pool=[];
+  careers.forEach(c=>{
+    let w=1; c.tags.forEach(t=>{ if(bio.includes(t)) w+=2; });
+    for(let i=0;i<w;i++) pool.push(c);
+  });
+  return pool.sort(()=>0.5-Math.random()).slice(0,4);
+}
+
+function predictCareer(){
+  const user=document.getElementById("username").value.trim();
+  const bio=document.getElementById("bio").value.trim();
+  if(!user) return alert("Enter a username 😭");
+
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("loading").classList.remove("hidden");
+
+  let i=0;
+  const interval=setInterval(()=>{
+    document.getElementById("loadingText").innerText=loadingMsgs[i%loadingMsgs.length];
+    i++; document.getElementById("beep").play();
+  },700);
+
+  setTimeout(()=>{
+    clearInterval(interval);
+    document.getElementById("loading").classList.add("hidden");
+
+    document.getElementById("avatar").src=`https://unavatar.io/twitter/${user}`;
+
+    const picks=weighted(bio);
+    const area=document.getElementById("careerCards");
+    area.innerHTML="";
+
+    picks.forEach(c=>{
+      const percent=Math.floor(Math.random()*50)+50;
+      const card=document.createElement("div");
+      card.className="card";
+      card.innerHTML=`<strong>${c.title}</strong> — ${percent}%<br>${c.desc}`;
+      addSwipe(card);
+      area.appendChild(card);
+      updateLeaderboard(c.title);
+    });
+
+    document.getElementById("finalVerdict").innerText=
+      `Main Character Career Arc: ${Math.floor(Math.random()*40)+60}%`;
+
+    document.getElementById("results").classList.remove("hidden");
+    document.getElementById("success").play();
+
+    document.getElementById("shareBtn").onclick=()=>{
+      navigator.clipboard.writeText(`Apparently I'm ${picks[0].title} 😭`);
+      alert("Copied! Post it 🚀");
+    };
+
+  },3000);
+}
+
+function addSwipe(el){
+  let startX=0;
+  el.addEventListener("touchstart",e=>startX=e.touches[0].clientX);
+  el.addEventListener("touchend",e=>{
+    let diff=e.changedTouches[0].clientX-startX;
+    if(Math.abs(diff)>80){
+      el.style.transform=`translateX(${diff}px) rotate(${diff/10}deg)`;
+      el.style.opacity="0";
+      setTimeout(()=>el.remove(),300);
+    }
+  });
+}
+
+function downloadImage(){
+  html2canvas(document.getElementById("captureArea")).then(canvas=>{
+    const link=document.createElement("a");
+    link.download="career-result.png";
+    link.href=canvas.toDataURL();
+    link.click();
+  });
+}
+
+function updateLeaderboard(title){
+  let data=JSON.parse(localStorage.getItem("careerBoard")||"{}");
+  data[title]=(data[title]||0)+1;
+  localStorage.setItem("careerBoard",JSON.stringify(data));
+  renderLeaderboard();
+}
+
+function renderLeaderboard(){
+  let data=JSON.parse(localStorage.getItem("careerBoard")||"{}");
+  let sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const list=document.getElementById("leaderboardList");
+  list.innerHTML="";
+  sorted.forEach(([k,v])=>{
+    const li=document.createElement("li");
+    li.textContent=`${k} — ${v} times`;
+    list.appendChild(li);
+  });
+}
+renderLeaderboard();
+</script>
+</body>
+</html>
